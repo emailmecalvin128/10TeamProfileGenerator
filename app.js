@@ -5,248 +5,194 @@ const inquirer = require("inquirer");
 const path = require("path");
 const fs = require("fs");
 
-const OUTPUT_DIR = path.resolve(__dirname, "output")
+const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
+const outputCSSPath = path.join(OUTPUT_DIR, "style.css");
 
 const render = require("./lib/htmlRenderer");
+const Employee = require("./lib/Employee");
 
-const teamMembers = [];
-const idArray = [];
 
-function appMenu() {
+// Write code to use inquirer to gather information about the development team members,
+// and to create objects for each team member (using the correct classes as blueprints!)
 
-  function createManager() {
-    console.log("Please build your team");
-    inquirer.prompt([
-      {
-        type: "input",
-        name: "managerName",
-        message: "What is your manager's name?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
-        }
-      },
-      {
-        type: "input",
-        name: "managerId",
-        message: "What is your manager's id?",
-        validate: answer => {
-          const pass = answer.match(
-            /^[1-9]\d*$/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a positive number greater than zero.";
-        }
-      },
-      {
-        type: "input",
-        name: "managerEmail",
-        message: "What is your manager's email?",
-        validate: answer => {
-          const pass = answer.match(
-            /\S+@\S+\.\S+/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a valid email address.";
-        }
-      },
-      {
-        type: "input",
-        name: "managerOfficeNumber",
-        message: "What is your manager's office number?",
-        validate: answer => {
-          const pass = answer.match(
-            /^[1-9]\d*$/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a positive number greater than zero.";
-        }
-      }
-    ]).then(answers => {
-      const manager = new Manager(answers.managerName, answers.managerId, answers.managerEmail, answers.managerOfficeNumber);
-      teamMembers.push(manager);
-      idArray.push(answers.managerId);
-      createTeam();
-    });
-  }
-
-  function createTeam() {
-
-    inquirer.prompt([
-      {
-        type: "list",
-        name: "memberChoice",
-        message: "Which type of team member would you like to add?",
-        choices: [
-          "Engineer",
-          "Intern",
-          "I don't want to add any more team members"
-        ]
-      }
-    ]).then(userChoice => {
-      switch(userChoice.memberChoice) {
-      case "Engineer":
-        addEngineer();
-        break;
-      case "Intern":
-        addIntern();
-        break;
-      default:
-        buildTeam();
-      }
-    });
-  }
-
-  function addEngineer() {
-    inquirer.prompt([
-      {
-        type: "input",
-        name: "engineerName",
-        message: "What is your engineer's name?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
-        }
-      },
-      {
-        type: "input",
-        name: "engineerId",
-        message: "What is your engineer's id?",
-        validate: answer => {
-          const pass = answer.match(
-            /^[1-9]\d*$/
-          );
-          if (pass) {
-            if (idArray.includes(answer)) {
-              return "This ID is already taken. Please enter a different number.";
-            } else {
-              return true;
-            }
-                        
-          }
-          return "Please enter a positive number greater than zero.";
-        }
-      },
-      {
-        type: "input",
-        name: "engineerEmail",
-        message: "What is your engineer's email?",
-        validate: answer => {
-          const pass = answer.match(
-            /\S+@\S+\.\S+/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a valid email address.";
-        }
-      },
-      {
-        type: "input",
-        name: "engineerGithub",
-        message: "What is your engineer's GitHub username?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
-        }
-      }
-    ]).then(answers => {
-      const engineer = new Engineer(answers.engineerName, answers.engineerId, answers.engineerEmail, answers.engineerGithub);
-      teamMembers.push(engineer);
-      idArray.push(answers.engineerId);
-      createTeam();
-    });
-  }
-
-  function addIntern() {
-    inquirer.prompt([
-      {
-        type: "input",
-        name: "internName",
-        message: "What is your intern's name?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
-        }
-      },
-      {
-        type: "input",
-        name: "internId",
-        message: "What is your intern's id?",
-        validate: answer => {
-          const pass = answer.match(
-            /^[1-9]\d*$/
-          );
-          if (pass) {
-            if (idArray.includes(answer)) {
-              return "This ID is already taken. Please enter a different number.";
-            } else {
-              return true;
-            }
-                        
-          }
-          return "Please enter a positive number greater than zero.";
-        }
-      },
-      {
-        type: "input",
-        name: "internEmail",
-        message: "What is your intern's email?",
-        validate: answer => {
-          const pass = answer.match(
-            /\S+@\S+\.\S+/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a valid email address.";
-        }
-      },
-      {
-        type: "input",
-        name: "internSchool",
-        message: "What is your intern's school?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
-        }
-      }
-    ]).then(answers => {
-      const intern = new Intern(answers.internName, answers.internId, answers.internEmail, answers.internSchool);
-      teamMembers.push(intern);
-      idArray.push(answers.internId);
-      createTeam();
-    });
-  }
-
-  function buildTeam() {
-    // Create the output directory if the output path doesn't exist
-    if (!fs.existsSync(OUTPUT_DIR)) {
-      fs.mkdirSync(OUTPUT_DIR)
+// function to validate questions that can't be blank
+const cannotBeBlank = async(input) => {
+    if (input === "") {
+       return "You must supply a value";
     }
-    fs.writeFileSync(outputPath, render(teamMembers), "utf-8");
-  }
+    return true;
+ };
 
-  createManager();
+// function to validate questions that must be numeric and not blank
+const mustBeNumeric = async(input) => {
+    if (parseInt(input) != input) {
+       return "You must supply a numeric value";
+    }
+    return true;
+ };
 
+ // function to validate email address is correct format (but can be blank)
+const isEmailAddress = async(input) => {
+    if (!input.includes(`@`) && (input != '' && input != null)) {
+       return "Please supply a valid email address";
+    }
+    return true;
+ };
+
+//array of questions
+const self = [
+    { 
+        type: "input",
+        message: "What is your name?",
+        name: "managerName",
+        validate: cannotBeBlank
+    },
+    { 
+        type: "input",
+        message: "What is your id?",
+        name: "managerId",
+        validate: mustBeNumeric
+    },
+    { 
+        type: "input",
+        message: "What is your email address?",
+        name: "managerEmail",
+        validate: isEmailAddress
+    },
+    { 
+        type: "input",
+        message: "What is your office number?",
+        name: "managerOfficeNumber"
+    }
+]
+
+// HINT: each employee type (manager, engineer, or intern) has slightly different
+// information; write your code to ask different questions via inquirer depending on
+// employee type.
+
+const questions = [
+    {
+        type: "list",
+        message: "What type of employee would you like to add?",
+        name: "empType",
+        choices: [
+            "Engineer", 
+            "Intern", 
+        ],
+        validate: cannotBeBlank
+    },
+    { 
+        type: "input",
+        message: "What is their name?",
+        name: "empName",
+        validate: cannotBeBlank
+    },
+    { 
+        type: "input",
+        message: "What is their id?",
+        name: "empId",
+        validate: mustBeNumeric
+    },
+    { 
+        type: "input",
+        message: "What is their email address?",
+        name: "empEmail",
+        validate: isEmailAddress
+    },
+    { 
+        type: "input",
+        message: "What is their GitHub user name?",
+        name: "empEngGitHub",
+        when: (answers) => answers.empType === 'Engineer'
+    },
+    { 
+        type: "input",
+        message: "What school do they attend?",
+        name: "empInternSchool",
+        when: (answers) => answers.empType === 'Intern'
+    },
+    {
+        type: "confirm",
+        name: "moreEmployees",
+        message: "Do you need to enter anymore employees?",
+        default: true
+    }
+]
+
+// declare array that will hold manager and employee responses assigned to classes
+let employees = [];
+
+// function to ask manager questions (self)
+function initManager() {
+    inquirer
+    .prompt(self)
+      .then(response => {
+        // set responses to Manager object and push to employees array
+        const manager = new Manager(response.managerName, response.managerId, response.managerEmail, response.managerOfficeNumber);
+        employees.push(manager);
+        // call function to ask employee (Engineer/Intern) questions
+        initEmployee();
+    });
 }
 
+//variable set that will eventually be used to determine if employee questions should repeat (based on prompt)
+let repeat = true;
 
-appMenu();
+// function to ask employee questions (engineer/intern)
+function initEmployee() {
+    // if repeat is true
+    if (repeat) {
+        inquirer
+        .prompt(questions)
+          .then(response => {
+            // if Engineer, set responses to Engineer object and push to employees array
+            if (response.empType === "Engineer") {
+                
+                const engineer = new Engineer(response.empName, response.empId, response.empEmail, response.empEngGitHub);
+                employees.push(engineer);
+
+            // if Intern, set responses to Intern object and push to employees array
+            } else if (response.empType === "Intern") {
+
+                const intern = new Intern(response.empName, response.empId, response.empEmail, response.empInternSchool);
+                employees.push(intern);
+            }
+
+            repeat = response.moreEmployees;
+            initEmployee();
+          })
+    } else {
+        //console.log(employees);
+        // once manager is finished answering questions, write to team.html file to render web page
+        createWebPage();
+    }
+}
+
+// After the user has input all employees desired, call the `render` function (required
+// above) and pass in an array containing all employee objects; the `render` function will
+// generate and return a block of HTML including templated divs for each employee!
+function createWebPage() {
+
+    const webPage = render(employees);
+    // After you have your html, you're now ready to create an HTML file using the HTML
+    // returned from the `render` function. Now write it to a file named `team.html` in the
+    // `output` folder. You can use the variable `outputPath` above target this location.
+    // Hint: you may need to check if the `output` folder exists and create it if it does not.
+    if (!fs.existsSync(OUTPUT_DIR)) {
+        fs.mkdirSync(OUTPUT_DIR);
+    }
+
+    // if (!fs.existsSync(outputCSSPath)) {
+        fs.copyFileSync("./templates/style.css", outputCSSPath);
+    // }
+
+    fs.writeFileSync(outputPath, webPage, err => {
+        if (err) {
+            console.log(err);
+        }
+    });
+}
+
+// call function to initialize program
+initManager();
